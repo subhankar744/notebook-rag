@@ -78,6 +78,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       url: QDRANT_URL,
       apiKey: QDRANT_API_KEY,
       collectionName: COLLECTION_NAME,
+      checkCompatibility: false, // Resolve "Failed to obtain server version" error
     });
 
     res.json({ message: "File uploaded and indexed successfully" });
@@ -108,6 +109,7 @@ app.post("/chat", async (req, res) => {
           url: QDRANT_URL,
           apiKey: QDRANT_API_KEY,
           collectionName: COLLECTION_NAME,
+          checkCompatibility: false, // Resolve "Failed to obtain server version" error
         });
       } catch (err) {
         return res.status(400).json({ 
