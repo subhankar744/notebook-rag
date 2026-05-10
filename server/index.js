@@ -42,12 +42,13 @@ const embeddings = new HuggingFaceInferenceEmbeddings({
 
 // Upload and Index Endpoint
 app.post("/upload", upload.single("file"), async (req, res) => {
+  let filePath = null;
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const filePath = req.file.path;
+    filePath = req.file.path;
     const loader = new PDFLoader(filePath);
     const rawDocs = await loader.load();
 
@@ -61,13 +62,15 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       collectionName: process.env.COLLECTION_NAME,
     });
 
-    // Cleanup: remove uploaded file after processing
-    fs.unlinkSync(filePath);
-
     res.json({ message: "File uploaded and indexed successfully" });
   } catch (error) {
     console.error("Upload error:", error);
     res.status(500).json({ error: error.message });
+  } finally {
+    // Cleanup: remove uploaded file after processing (even on error)
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
   }
 });
 
@@ -81,17 +84,27 @@ app.post("/chat", async (req, res) => {
     }
 
     if (!vectorStore) {
-      // Try to load existing collection if vectorStore is not in memory
-      vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
-        url: process.env.QDRANT_URL,
-        apiKey: process.env.QDRANT_API_KEY,
-        collectionName: process.env.COLLECTION_NAME,
-      });
+      try {
+        // Try to load existing collection if vectorStore is not in memory
+        vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
+          url: process.env.QDRANT_URL,
+          apiKey: process.env.QDRANT_API_KEY,
+          collectionName: process.env.COLLECTION_NAME,
+        });
+      } catch (err) {
+        return res.status(400).json({ 
+          error: "No document indexed yet. Please upload a PDF first." 
+        });
+      }
     }
 
     // Retrieval
     const retriever = vectorStore.asRetriever({ k: 5 });
     const relevantDocs = await retriever.invoke(message);
+
+    if (relevantDocs.length === 0) {
+      return res.json({ answer: "I couldn't find any relevant information in the document to answer your question." });
+    }
 
     // Generation using OpenRouter
     const client = new OpenAI({
