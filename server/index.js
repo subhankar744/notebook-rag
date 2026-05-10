@@ -92,9 +92,10 @@ app.post("/chat", async (req, res) => {
     const retriever = vectorStore.asRetriever({ k: 5 });
     const relevantDocs = await retriever.invoke(message);
 
-    // Generation using OpenAI directly for more control over prompt
+    // Generation using OpenRouter
     const client = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey: process.env.OPENROUTER_API_KEY,
     });
 
     const context = relevantDocs
@@ -115,7 +116,7 @@ app.post("/chat", async (req, res) => {
     `;
 
     const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "google/gemini-2.0-flash-lite-preview-02-05:free",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: message },
