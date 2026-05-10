@@ -159,7 +159,7 @@ app.post("/chat", async (req, res) => {
     `;
 
     const response = await client.chat.completions.create({
-      model: "google/gemini-2.0-flash-exp:free",
+      model: "google/gemini-2.0-flash:free",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: message },
