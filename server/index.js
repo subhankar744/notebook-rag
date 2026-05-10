@@ -9,6 +9,11 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { QdrantVectorStore } from "@langchain/qdrant";
 import { OpenAI } from "openai";
+import { fetch, setGlobalDispatcher, Agent } from "undici";
+
+// Force Node.js to use undici's fetch instead of the buggy built-in one
+globalThis.fetch = fetch;
+setGlobalDispatcher(new Agent({ connect: { timeout: 60000 } }));
 
 dotenv.config();
 
