@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { OpenAIEmbeddings, ChatOpenAI } from "@langchain/openai";
+import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { QdrantVectorStore } from "@langchain/qdrant";
 import { OpenAI } from "openai";
 
@@ -35,8 +35,9 @@ const textSplitter = new RecursiveCharacterTextSplitter({
   chunkOverlap: 200,
 });
 
-const embeddings = new OpenAIEmbeddings({
-  model: "text-embedding-3-large",
+const embeddings = new HuggingFaceInferenceEmbeddings({
+  apiKey: process.env.HUGGINGFACEHUB_API_TOKEN,
+  model: "sentence-transformers/all-MiniLM-L6-v2",
 });
 
 // Upload and Index Endpoint
