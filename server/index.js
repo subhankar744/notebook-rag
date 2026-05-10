@@ -12,6 +12,13 @@ import { OpenAI } from "openai";
 
 dotenv.config();
 
+// Sanitize environment variables to prevent "invalid header" errors from hidden spaces/newlines
+const QDRANT_URL = process.env.QDRANT_URL?.trim();
+const QDRANT_API_KEY = process.env.QDRANT_API_KEY?.trim();
+const COLLECTION_NAME = process.env.COLLECTION_NAME?.trim();
+const HUGGINGFACEHUB_API_TOKEN = process.env.HUGGINGFACEHUB_API_TOKEN?.trim();
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY?.trim();
+
 const app = express();
 const port = process.env.PORT || 5001;
 
@@ -29,14 +36,13 @@ if (!fs.existsSync("uploads")) {
 let vectorStore;
 
 // Chunking Strategy: RecursiveCharacterTextSplitter
-// It splits by characters but tries to keep paragraphs and sentences together.
 const textSplitter = new RecursiveCharacterTextSplitter({
   chunkSize: 1000,
   chunkOverlap: 200,
 });
 
 const embeddings = new HuggingFaceInferenceEmbeddings({
-  apiKey: process.env.HUGGINGFACEHUB_API_TOKEN,
+  apiKey: HUGGINGFACEHUB_API_TOKEN,
   model: "sentence-transformers/all-MiniLM-L6-v2",
 });
 
@@ -57,9 +63,9 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
     // Indexing into Qdrant
     vectorStore = await QdrantVectorStore.fromDocuments(docs, embeddings, {
-      url: process.env.QDRANT_URL,
-      apiKey: process.env.QDRANT_API_KEY,
-      collectionName: process.env.COLLECTION_NAME,
+      url: QDRANT_URL,
+      apiKey: QDRANT_API_KEY,
+      collectionName: COLLECTION_NAME,
     });
 
     res.json({ message: "File uploaded and indexed successfully" });
@@ -87,9 +93,9 @@ app.post("/chat", async (req, res) => {
       try {
         // Try to load existing collection if vectorStore is not in memory
         vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
-          url: process.env.QDRANT_URL,
-          apiKey: process.env.QDRANT_API_KEY,
-          collectionName: process.env.COLLECTION_NAME,
+          url: QDRANT_URL,
+          apiKey: QDRANT_API_KEY,
+          collectionName: COLLECTION_NAME,
         });
       } catch (err) {
         return res.status(400).json({ 
@@ -109,7 +115,7 @@ app.post("/chat", async (req, res) => {
     // Generation using OpenRouter
     const client = new OpenAI({
         baseURL: "https://openrouter.ai/api/v1",
-        apiKey: process.env.OPENROUTER_API_KEY,
+        apiKey: OPENROUTER_API_KEY,
     });
 
     const context = relevantDocs
