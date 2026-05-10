@@ -53,9 +53,20 @@ If you have Docker installed, you can run Qdrant with:
 docker run -p 6333:6333 qdrant/qdrant
 ```
 
-## How it Works
-1. **Ingestion:** When you upload a PDF, the server loads it and splits it into smaller chunks (1000 characters with 200 overlap).
-2. **Embedding:** Each chunk is converted into a high-dimensional vector using OpenAI's `text-embedding-3-large` model.
-3. **Indexing:** These vectors are stored in a Qdrant collection.
-4. **Retrieval:** When you ask a question, your query is embedded, and the most relevant chunks are retrieved from Qdrant.
-5. **Generation:** The retrieved chunks are sent to GPT-4o-mini with a strict prompt to ensure the answer is grounded in the document.
+## RAG Pipeline Details
+
+### 1. Ingestion & Chunking Strategy
+The application uses the **RecursiveCharacterTextSplitter** strategy. 
+- **Chunk Size:** 1000 characters
+- **Chunk Overlap:** 200 characters
+- **Why this strategy?** It intelligently splits text based on paragraphs, then sentences, and finally words. This ensures that the context remains meaningful within each chunk, preventing important information from being cut off in the middle of a sentence.
+
+### 2. Embedding & Vector Storage
+- **Model:** `sentence-transformers/all-MiniLM-L6-v2` via Hugging Face Inference API (Serverless).
+- **Database:** **Qdrant Vector Database**.
+- Chunks are converted into 384-dimensional vectors and stored semantically.
+
+### 3. Retrieval & Generation
+- **Retriever:** k=5 (retrieves the 5 most relevant document segments).
+- **LLM:** `gemini-2.0-flash-lite` via OpenRouter.
+- **Prompting:** Uses a strict "System Prompt" that mandates the AI only answer based on the provided context, fulfilling the "groundedness" requirement of the assignment.
