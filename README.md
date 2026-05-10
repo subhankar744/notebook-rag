@@ -1,39 +1,65 @@
-# Notebook RAG
+# Notebook RAG 📓🚀
 
-Your own version of Google NotebookLM. Upload documents and have grounded conversations with them.
+Your own private version of Google NotebookLM. Upload documents and have grounded, context-aware conversations with them. This application uses a Retrieval-Augmented Generation (RAG) pipeline to ensure accuracy and prevent AI hallucinations.
 
-## Features
-- **PDF Upload:** Seamlessly upload and process PDF documents.
-- **Intelligent Chunking:** Uses `RecursiveCharacterTextSplitter` to preserve context while splitting text.
-- **Vector Search:** Powered by Qdrant and OpenAI Embeddings for fast, semantic retrieval.
-- **Grounded AI:** Answers are strictly based on the uploaded document, preventing hallucinations.
+## 🌟 Features
 
-## Tech Stack
-- **Frontend:** React, Vite, Lucide React, Axios
-- **Backend:** Node.js, Express, Multer
-- **AI/RAG:** LangChain, OpenAI (GPT-4o-mini & Text Embeddings)
+- **📄 PDF Processing:** Seamlessly upload and process PDF documents.
+- **✂️ Intelligent Chunking:** Uses `RecursiveCharacterTextSplitter` to preserve semantic context while splitting text into manageable pieces.
+- **🔍 Semantic Search:** Powered by **Qdrant Vector Database** and **Hugging Face Embeddings** for lightning-fast, relevant information retrieval.
+- **🛡️ Grounded AI:** Answers are strictly derived from your uploaded documents using **Gemini 1.5 Flash**, ensuring high reliability.
+- **💻 Modern UI:** A clean, responsive, and intuitive interface built with React, Vite, and Lucide icons.
+- **🔄 Fallback Logic:** Robust error handling with automatic model fallback to ensure high availability.
+
+## 🏗️ Project Structure
+
+```text
+notebook-rag/
+├── client/                # React + Vite Frontend
+│   ├── src/
+│   │   ├── App.tsx        # Main UI Logic
+│   │   ├── App.css        # Styling
+│   │   └── main.tsx       # Entry Point
+│   └── package.json
+├── server/                # Node.js + Express Backend
+│   ├── index.js           # API Endpoints & RAG Logic
+│   ├── uploads/           # Temporary storage for PDF processing
+│   └── package.json
+└── README.md
+```
+
+## ⚙️ Tech Stack
+
+- **Frontend:** React 19, Vite, Lucide React, Axios, TypeScript
+- **Backend:** Node.js, Express, Multer, LangChain
+- **AI/RAG:** OpenRouter (Gemini 1.5 Flash), Hugging Face Inference (`all-MiniLM-L6-v2`)
 - **Database:** Qdrant (Vector Store)
 
-## Setup Instructions
+## 🛠️ Setup Instructions
 
 ### 1. Prerequisites
 - Node.js (v18+)
-- An OpenAI API Key
-- A Qdrant instance (Local via Docker or Qdrant Cloud)
+- [OpenRouter API Key](https://openrouter.ai/)
+- [Hugging Face API Token](https://huggingface.co/settings/tokens)
+- A Qdrant instance (Local via Docker or [Qdrant Cloud](https://cloud.qdrant.io/))
 
 ### 2. Backend Setup
 1. Navigate to the server directory:
    ```bash
    cd server
    ```
-2. Open `.env` and add your credentials:
+2. Create a `.env` file:
    ```env
-   OPENAI_API_KEY=your_key_here
-   QDRANT_URL=http://localhost:6333
+   PORT=5001
+   OPENROUTER_API_KEY=your_openrouter_key
+   HUGGINGFACEHUB_API_TOKEN=your_huggingface_token
+   QDRANT_URL=your_qdrant_url
+   QDRANT_API_KEY=your_qdrant_api_key (optional for local)
    COLLECTION_NAME=notebook-rag
    ```
-3. Start the server:
+3. Install dependencies and start the server:
    ```bash
+   npm install
    npm start
    ```
 
@@ -42,31 +68,57 @@ Your own version of Google NotebookLM. Upload documents and have grounded conver
    ```bash
    cd client
    ```
-2. Start the development server:
+2. (Optional) Create a `.env` file if your backend is not on `localhost:5001`:
+   ```env
+   VITE_API_URL=http://your-backend-url
+   ```
+3. Install dependencies and start the development server:
    ```bash
+   npm install
    npm run dev
    ```
 
-### 4. Running Qdrant Locally (Recommended)
-If you have Docker installed, you can run Qdrant with:
-```bash
-docker run -p 6333:6333 qdrant/qdrant
+---
+
+## 🧠 How It Works (RAG Pipeline)
+
+The application follows a standard RAG architecture to provide grounded answers:
+
+```mermaid
+graph TD
+    A[User Uploads PDF] --> B[Server: Parse PDF]
+    B --> C[Server: Recursive Chunking]
+    C --> D[Hugging Face: Generate Embeddings]
+    D --> E[Qdrant: Store Vector Embeddings]
+    
+    F[User Asks Question] --> G[Hugging Face: Embed Query]
+    G --> H[Qdrant: Semantic Similarity Search]
+    H --> I[Retrieve Top 5 Context Chunks]
+    I --> J[OpenRouter: Gemini 1.5 Flash]
+    J --> K[Grounded Answer Generated]
+    K --> L[User Receives Answer]
 ```
 
-## RAG Pipeline Details
+### 1. Ingestion & Chunking
+- **Strategy:** `RecursiveCharacterTextSplitter`
+- **Chunk Size:** 1000 characters | **Overlap:** 200 characters
+- **Why?** This ensures that sentences aren't cut in half and that context flows between chunks.
 
-### 1. Ingestion & Chunking Strategy
-The application uses the **RecursiveCharacterTextSplitter** strategy. 
-- **Chunk Size:** 1000 characters
-- **Chunk Overlap:** 200 characters
-- **Why this strategy?** It intelligently splits text based on paragraphs, then sentences, and finally words. This ensures that the context remains meaningful within each chunk, preventing important information from being cut off in the middle of a sentence.
-
-### 2. Embedding & Vector Storage
-- **Model:** `sentence-transformers/all-MiniLM-L6-v2` via Hugging Face Inference API (Serverless).
-- **Database:** **Qdrant Vector Database**.
-- Chunks are converted into 384-dimensional vectors and stored semantically.
+### 2. Embedding & Storage
+- **Model:** `sentence-transformers/all-MiniLM-L6-v2` (384 dimensions)
+- **Vector DB:** Qdrant is used for efficient similarity search, allowing the system to find relevant document sections in milliseconds.
 
 ### 3. Retrieval & Generation
-- **Retriever:** k=5 (retrieves the 5 most relevant document segments).
-- **LLM:** `gemini-2.0-flash-lite` via OpenRouter.
-- **Prompting:** Uses a strict "System Prompt" that mandates the AI only answer based on the provided context, fulfilling the "groundedness" requirement of the assignment.
+- **Context Retrieval:** The system retrieves the top 5 most relevant chunks for every query.
+- **Prompt Engineering:** A strict system prompt forces the LLM to use *only* the provided context. If the answer isn't there, it won't make one up.
+
+---
+
+## 🚀 Future Improvements
+- [ ] Support for multiple document uploads.
+- [ ] Integration with more file types (Docx, TXT, Markdown).
+- [ ] Persistent chat history.
+- [ ] Citations with direct links to PDF pages.
+
+## 📄 License
+This project is open-source and available under the [ISC License](LICENSE).
