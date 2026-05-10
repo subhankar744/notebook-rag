@@ -139,6 +139,10 @@ app.post("/chat", async (req, res) => {
     const client = new OpenAI({
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: OPENROUTER_API_KEY,
+        defaultHeaders: {
+          "HTTP-Referer": "https://render.com", // Required for OpenRouter free tier
+          "X-Title": "Notebook RAG Assignment",
+        }
     });
 
     const context = relevantDocs
@@ -158,13 +162,26 @@ app.post("/chat", async (req, res) => {
       ${context}
     `;
 
-    const response = await client.chat.completions.create({
-      model: "google/gemini-2.0-flash:free",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
-    });
+    let response;
+    try {
+      response = await client.chat.completions.create({
+        model: "google/gemini-flash-1.5:free",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message },
+        ],
+      });
+    } catch (modelError) {
+      console.warn("Primary model failed, falling back to openrouter/free:", modelError.message);
+      // Fallback to the universal free router if the specific Gemini ID fails
+      response = await client.chat.completions.create({
+        model: "openrouter/free",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message },
+        ],
+      });
+    }
 
     res.json({ answer: response.choices[0].message.content });
   } catch (error) {
