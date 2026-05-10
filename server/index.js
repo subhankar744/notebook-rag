@@ -13,11 +13,12 @@ import { OpenAI } from "openai";
 dotenv.config();
 
 // Sanitize environment variables to prevent "invalid header" errors from hidden spaces/newlines
+// Using replace(/\s/g, '') to remove ALL whitespace, including spaces in the middle of the string
 const QDRANT_URL = process.env.QDRANT_URL?.trim();
-const QDRANT_API_KEY = process.env.QDRANT_API_KEY?.trim();
+const QDRANT_API_KEY = process.env.QDRANT_API_KEY?.replace(/\s/g, '');
 const COLLECTION_NAME = process.env.COLLECTION_NAME?.trim();
-const HUGGINGFACEHUB_API_TOKEN = process.env.HUGGINGFACEHUB_API_TOKEN?.trim();
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY?.trim();
+const HUGGINGFACEHUB_API_TOKEN = process.env.HUGGINGFACEHUB_API_TOKEN?.replace(/\s/g, '');
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY?.replace(/\s/g, '');
 
 const app = express();
 const port = process.env.PORT || 5001;
