@@ -18,14 +18,18 @@ setGlobalDispatcher(new Agent({ connect: { timeout: 60000 } }));
 dotenv.config();
 
 // Sanitize and log environment variables for debugging (obscured)
-const QDRANT_URL = process.env.QDRANT_URL?.trim();
+let QDRANT_URL = process.env.QDRANT_URL?.trim();
+// Force strip :6333 for cloud URLs to ensure port 443 is used
+if (QDRANT_URL && QDRANT_URL.includes("cloud.qdrant.io") && QDRANT_URL.includes(":6333")) {
+  QDRANT_URL = QDRANT_URL.replace(":6333", "");
+}
 const QDRANT_API_KEY = process.env.QDRANT_API_KEY?.replace(/\s/g, '');
 const COLLECTION_NAME = process.env.COLLECTION_NAME?.trim();
 const HUGGINGFACEHUB_API_TOKEN = process.env.HUGGINGFACEHUB_API_TOKEN?.replace(/\s/g, '');
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY?.replace(/\s/g, '');
 
 console.log("--- Server Configuration ---");
-console.log("QDRANT_URL:", QDRANT_URL ? "Defined" : "MISSING");
+console.log("QDRANT_URL (Sanitized):", QDRANT_URL || "MISSING");
 console.log("COLLECTION_NAME:", COLLECTION_NAME || "MISSING");
 console.log("HUGGINGFACE_TOKEN:", HUGGINGFACEHUB_API_TOKEN ? "Defined (Length: " + HUGGINGFACEHUB_API_TOKEN.length + ")" : "MISSING");
 console.log("OPENROUTER_KEY:", OPENROUTER_API_KEY ? "Defined" : "MISSING");
