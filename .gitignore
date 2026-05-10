@@ -1,0 +1,6 @@
+Ignore .env files
+node_modules
+.env
+dist
+uploads
+.DS_Store
